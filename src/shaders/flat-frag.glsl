@@ -4,6 +4,7 @@ precision highp float;
 uniform vec3 u_Eye, u_Ref, u_Up;
 uniform vec2 u_Dimensions;
 uniform float u_Time;
+uniform int u_Mode;
 
 in vec2 fs_Pos;
 out vec4 out_Col;
@@ -124,7 +125,7 @@ vec3 getWaterColor(vec2 pos, float height) {
     vec2 worleyOffset = vec2(time * 0.2);
     float worley = worley(pos + worleyOffset - perturbence * 0.05, 15.0);
     float noise = worley;
-    float coastOffset = sin(time * 10.0) * 0.02 + 0.05;
+    float coastOffset = (sin(time * 20.0) * 0.5 + 1.0) * 0.03 + 0.04;
     if (height > -coastOffset) {
         float coast = clamp((height + coastOffset) / 0.1, 0.0, 1.0);
         noise = mix(noise, 1.0, coast);
@@ -139,26 +140,67 @@ vec3 getWaterColor(vec2 pos, float height) {
 }
 
 vec3 getHeightColor(float height) {
+    if ((u_Mode & 1) == 0) {
+        return height < 0.0125 ? vec3(0, 0, 1) : vec3(0, 0.7, 0);
+    }
+
     vec3 WATER = getWaterColor(fs_Pos, height);
+    vec3 SAND = vec3(0.9, 0.9, 0.5);
+    vec3 GRASS1 = vec3(0, 0.5, 0);
+    vec3 GRASS2 = vec3(0.4, 0.7, 0.1);
+    vec3 DIRT = vec3(0.4, 0.25, 0.1);
+    vec3 STONE = vec3(0.5, 0.5, 0.5);
+    vec3 SNOW = vec3(0.97, 0.97, 1.0);
 
     if (height < 0.0) {
         return WATER;
     }
     else if (height > 0.0 && height < 0.025) {
-        return mix(WATER, vec3(0.9, 0.9, 0.5), cubicFalloff(height / 0.025));
+        return mix(WATER, SAND, height / 0.025);
     }
     else if (height > 0.025 && height < 0.05) {
-        return mix(vec3(0.9, 0.9, 0.5), vec3(0, 0.5, 0), cubicFalloff((height - 0.025) / 0.025));
+        return mix(SAND, GRASS1, cubicFalloff((height - 0.025) / 0.025));
     }
-    else if (height > 0.05) {
+    else if (height > 0.05 && height < 0.15) {
+        return mix(GRASS1, GRASS2, cubicFalloff((height - 0.05) / 0.1));;
+    }
+    else if (height > 0.15 && height < 0.19) {
+        return mix(GRASS2, DIRT, cubicFalloff((height - 0.15) / 0.04));
+    }
+    else if (height > 0.19 && height < 0.23) {
         //float t = clamp(cubicFalloff((height - 0.05) / 0.95) * 10.0, 0.0, 1.0)
-        return mix(vec3(0, 0.5, 0), vec3(0.7), clamp(cubicFalloff((height - 0.05) / 0.95) * 6.0, 0.0, 1.0));
+        return mix(DIRT, STONE, cubicFalloff((height - 0.19) / 0.04));
+    }
+    else if (height > 0.23 && height < 0.35) {
+        return mix(STONE, SNOW, cubicFalloff((height - 0.23) / 0.12));
+    }
+    else {
+        return SNOW;
     }
 }
 
+float populationHeightFalloff(float height) {
+    return(
+        height > 0.025 && height < 0.085 ? cubicFalloff((height - 0.025) / 0.06) :
+        height > 0.085 && height < 0.140 ? 1.0 :
+        height > 0.140 && height < 0.200 ? cubicFalloff(-(height - 0.140) / 0.06 + 1.0) :
+        0.0
+    );
+}
+
+float exaggerate(float t) {
+    return (
+        t < 0.375 ? 0.0 :
+        t > 0.375 && t < 0.625 ? cubicFalloff(4.0 * t - 1.5) :
+        1.0
+    );
+}
+
 void main() {
-    float height = pow(recursivePerlin(fs_Pos, 3, 5.0), 2.0);
-    height -= pow(fbm(fs_Pos, 3, 0.5), 2.0);
-    vec3 color = getHeightColor(height);
+    float height = pow(recursivePerlin(fs_Pos, 3, 5.0), 2.0) - pow(fbm(fs_Pos, 3, 0.5), 2.0);
+    float population = clamp(pow(exaggerate(perlin(fs_Pos, 3.0)), 3.0) * 2.5, 0.0, 1.0) * populationHeightFalloff(height);
+
+    vec3 heightColor = getHeightColor(height);
+    vec3 color = ((u_Mode & 2) > 0) ? mix(heightColor, vec3(1, 0, 0), population) : heightColor;
     out_Col = vec4(color, 1.0);
 }

@@ -36,6 +36,7 @@ class ShaderProgram {
   unifEye: WebGLUniformLocation;
   unifUp: WebGLUniformLocation;
   unifDimensions: WebGLUniformLocation;
+  unifMode: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -61,6 +62,7 @@ class ShaderProgram {
     this.unifEye   = gl.getUniformLocation(this.prog, "u_Eye");
     this.unifRef   = gl.getUniformLocation(this.prog, "u_Ref");
     this.unifUp   = gl.getUniformLocation(this.prog, "u_Up");
+    this.unifMode = gl.getUniformLocation(this.prog, "u_Mode");
   }
 
   use() {
@@ -122,6 +124,16 @@ class ShaderProgram {
     this.use();
     if (this.unifTime !== -1) {
       gl.uniform1f(this.unifTime, t);
+    }
+  }
+
+  setMode(displayHeight: boolean, displayPop: boolean) {
+    this.use();
+    if (this.unifMode !== -1) {
+      let mode = 0
+        | (displayHeight ? 1 : 0)
+        | (displayPop ? 2 : 0);
+      gl.uniform1i(this.unifMode, mode);
     }
   }
 
