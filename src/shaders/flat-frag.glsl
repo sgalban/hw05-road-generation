@@ -117,6 +117,7 @@ float worley(vec2 noisePos, float frequency) {
 }
 
 vec3 getWaterColor(vec2 pos, float height) {
+    pos = pos / 15.0;
     float time = float(u_Time) * 0.0005;
 
     vec2 perturbenceOffset = vec2(5.4 + time, 1.3 + time);
@@ -139,12 +140,12 @@ vec3 getWaterColor(vec2 pos, float height) {
     return mix(vec3(0.3, 0.3, 1.0), vec3(0.6, 0.6, 0.9), cubicFalloff(noise));
 }
 
-vec3 getHeightColor(float height) {
+vec3 getHeightColor(float height, vec2 pos) {
     if ((u_Mode & 1) == 0) {
         return height < 0.0125 ? vec3(0, 0, 1) : vec3(0, 0.7, 0);
     }
 
-    vec3 WATER = getWaterColor(fs_Pos, height);
+    vec3 WATER = getWaterColor(pos, height);
     vec3 SAND = vec3(0.9, 0.9, 0.5);
     vec3 GRASS1 = vec3(0, 0.5, 0);
     vec3 GRASS2 = vec3(0.4, 0.7, 0.1);
@@ -196,11 +197,20 @@ float exaggerate(float t) {
     );
 }
 
-void main() {
-    float height = pow(recursivePerlin(fs_Pos, 3, 5.0), 2.0) - pow(fbm(fs_Pos, 3, 0.5), 2.0);
-    float population = clamp(pow(exaggerate(perlin(fs_Pos, 3.0)), 3.0) * 2.5, 0.0, 1.0) * populationHeightFalloff(height);
+vec3 getRawColor(vec2 pos) {
 
-    vec3 heightColor = getHeightColor(height);
+    float height = pow(recursivePerlin(pos, 3, 0.5), 2.0) - pow(fbm(pos, 3, 0.05), 2.0);
+    float population = clamp(pow(exaggerate(perlin(pos, 0.3)), 3.0) * 2.5, 0.0, 1.0) * populationHeightFalloff(height);
+
+    vec3 heightColor = getHeightColor(height, pos);
     vec3 color = ((u_Mode & 2) > 0) ? mix(heightColor, vec3(1, 0, 0), population) : heightColor;
-    out_Col = vec4(color, 1.0);
+
+    return color;
+}
+
+void main() {
+    float aspectRatio = u_Dimensions.x / u_Dimensions.y;
+    vec2 pos = vec2(fs_Pos.x * 10.0 * aspectRatio, fs_Pos.y * 10.0);
+
+    out_Col = vec4(getRawColor(pos), 1.0);
 }

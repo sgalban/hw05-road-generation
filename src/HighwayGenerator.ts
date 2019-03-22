@@ -49,4 +49,8 @@ export default class HighwayGenerator {
         this.network.addNode(new Node(startPoint));
         this.network.addNode(new Node(vec2.add(vec2.create(), startPoint, vec2.fromValues(0, 0.1))));
     }
+
+    drawHighwayNetwork() {
+        
+    }
 }

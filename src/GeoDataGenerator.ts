@@ -134,7 +134,7 @@ function fbm(noisePos: vec2, numOctaves: number, startFrequency: number) : numbe
 }
 
 export function getTerrainHeight(pos: vec2) : number {
-    return Math.pow(recursivePerlin(pos, 3, 5.0), 2.0) - Math.pow(fbm(pos, 3, 0.5), 2.0);
+    return Math.pow(recursivePerlin(pos, 3, 0.5), 2.0) - Math.pow(fbm(pos, 3, 0.05), 2.0);
 }
 
 export function isLand(pos: vec2) {
@@ -164,5 +164,5 @@ function populationHeightFalloff(height: number) : number {
 
 export function getPopulationDensity(pos: vec2) : number {
     let height = getTerrainHeight(pos);
-    return normalClamp(Math.pow(exaggerate(perlin(pos, 3.0)), 3.0) * 2.5) * populationHeightFalloff(height);
+    return normalClamp(Math.pow(exaggerate(perlin(pos, 0.3)), 3.0) * 2.5) * populationHeightFalloff(height);
 }

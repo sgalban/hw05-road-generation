@@ -54,10 +54,12 @@ class ShaderProgram {
     this.attrCol = gl.getAttribLocation(this.prog, "vs_Col");
     this.attrTranslate = gl.getAttribLocation(this.prog, "vs_Translate");
     this.attrUV = gl.getAttribLocation(this.prog, "vs_UV");
+
     this.unifModel      = gl.getUniformLocation(this.prog, "u_Model");
     this.unifModelInvTr = gl.getUniformLocation(this.prog, "u_ModelInvTr");
     this.unifViewProj   = gl.getUniformLocation(this.prog, "u_ViewProj");
     this.unifCameraAxes      = gl.getUniformLocation(this.prog, "u_CameraAxes");
+    this.unifDimensions      = gl.getUniformLocation(this.prog, "u_Dimensions");
     this.unifTime      = gl.getUniformLocation(this.prog, "u_Time");
     this.unifEye   = gl.getUniformLocation(this.prog, "u_Eye");
     this.unifRef   = gl.getUniformLocation(this.prog, "u_Ref");
@@ -88,6 +90,7 @@ class ShaderProgram {
   setDimensions(width: number, height: number) {
     this.use();
     if(this.unifDimensions !== -1) {
+      console.log("Setting " + width + ", " + height);
       gl.uniform2f(this.unifDimensions, width, height);
     }
   }

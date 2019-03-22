@@ -28,7 +28,7 @@ function loadScene() {
     square.create();
     screenQuad = new ScreenQuad();
     screenQuad.create();
-  
+
     // Set up instanced rendering data arrays here.
     // This example creates a set of positional
     // offsets and gradiated colors for a 100x100 grid
@@ -98,6 +98,7 @@ function main() {
         new Shader(gl.VERTEX_SHADER, require('./shaders/flat-vert.glsl')),
         new Shader(gl.FRAGMENT_SHADER, require('./shaders/flat-frag.glsl')),
     ]);
+    flat.setDimensions(window.innerWidth, window.innerHeight);
   
     // This function will be called every frame
     function tick() {
