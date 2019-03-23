@@ -18,10 +18,20 @@ export default class Turtle {
         this.history = [];
     }
 
+    setPosition(pos: vec2): void {
+        this.position = pos;
+    }
+
+    setAngle(angle: number): void {
+        this.angle = angle;
+    }
+
     duplicate(): Turtle {
         let copy : Turtle = new Turtle();
         copy.position = vec2.clone(this.position);
         copy.angle = this.angle;
+        copy.node = this.node;
+        copy.history = this.history;
         //copy.recursionDepth = this.recursionDepth + 1;
         return copy;
     }
@@ -29,6 +39,8 @@ export default class Turtle {
     copy(other: Turtle): void {
         this.position = other.position;
         this.angle = other.angle;
+        this.node = other.node;
+        this.history = other.history;
         //this.recursionDepth = other.recursionDepth - 1;
     }
 
@@ -37,12 +49,20 @@ export default class Turtle {
     }
 
     moveForward(amount: number): void {
-        let delta: vec2 = vec2.fromValues(amount * Math.cos(this.angle), amount * Math.sin(this.angle));
+        let radians = this.angle * Math.PI / 180.0;
+        let delta: vec2 = vec2.fromValues(amount * Math.cos(radians), amount * Math.sin(radians));
         vec2.add(this.position, this.position, delta);
     }
 
-    branch() {
+    dryMove(angle: number, amount: number): vec2 {
+        let radians = (this.angle + angle) * Math.PI / 180.0;
+        let delta: vec2 = vec2.fromValues(amount * Math.cos(radians), amount * Math.sin(radians));
+        return vec2.add(vec2.create(), this.position, delta);
+    }
+
+    branch(angle: number) {
         let newTurt: Turtle = this.duplicate();
+        newTurt.rotate(angle);
         this.history.push(newTurt);
     }
 

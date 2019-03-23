@@ -142,7 +142,7 @@ vec3 getWaterColor(vec2 pos, float height) {
 
 vec3 getHeightColor(float height, vec2 pos) {
     if ((u_Mode & 1) == 0) {
-        return height < 0.0125 ? vec3(0, 0, 1) : vec3(0, 0.7, 0);
+        return height < 0.0125 ? vec3(0.5, 0.5, 1) : vec3(0.3, 0.8, 0.3);
     }
 
     vec3 WATER = getWaterColor(pos, height);

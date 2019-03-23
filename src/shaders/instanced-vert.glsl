@@ -35,7 +35,7 @@ void main() {
     
     vec2 pos = vs_Pos.xy;
     //pos += direction * length * 0.5;
-    pos = vec2(pos.x * length, pos.y / 10.0);
+    pos = vec2(pos.x * length, pos.y / 15.0);
     pos = rotation * pos;
     pos += (end1 + end2) / 2.0;
     pos = vec2(pos.x / 10.0 / aspectRatio, pos.y / 10.0);

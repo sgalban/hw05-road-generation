@@ -161,6 +161,12 @@ function populationHeightFalloff(height: number) : number {
 }
 
 export function getPopulationDensity(pos: vec2) : number {
+    if (Math.abs(pos[0]) > 20 || Math.abs(pos[1]) > 10) {
+        return -1.0;
+    }
     let height = getTerrainHeight(pos);
+    if (height < 0.02) {
+        return -1.0;
+    }
     return normalClamp(Math.pow(perlin(pos, 0.3), 3.0) * 2.5) * populationHeightFalloff(height);
 }
