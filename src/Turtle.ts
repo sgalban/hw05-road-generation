@@ -1,21 +1,26 @@
-import {vec3, quat, mat4} from 'gl-matrix';
+import {vec2, vec3, quat, mat4} from 'gl-matrix';
+import {Node} from './SpatialGraph';
 
 export default class Turtle {
-    position: vec3;
+    position: vec2;
+    node: Node;
     angle: number;
     color: vec3;
     recursionDepth: number;
+    history: Turtle[];
 
     constructor() {
-        this.position = vec3.fromValues(0, 0, 0);
+        this.position = vec2.fromValues(0, 0);
         this.angle = 0;
         this.color = vec3.fromValues(0.6, 0.3, 0.2);
         this.recursionDepth = 0;
+        this.node = null;
+        this.history = [];
     }
 
     duplicate(): Turtle {
         let copy : Turtle = new Turtle();
-        copy.position = vec3.clone(this.position);
+        copy.position = vec2.clone(this.position);
         copy.angle = this.angle;
         //copy.recursionDepth = this.recursionDepth + 1;
         return copy;
@@ -27,8 +32,33 @@ export default class Turtle {
         //this.recursionDepth = other.recursionDepth - 1;
     }
 
-    rotate(amount: number) {
+    rotate(amount: number): void {
         this.angle = (this.angle + amount) % 360;
+    }
+
+    moveForward(amount: number): void {
+        let delta: vec2 = vec2.fromValues(amount * Math.cos(this.angle), amount * Math.sin(this.angle));
+        vec2.add(this.position, this.position, delta);
+    }
+
+    branch() {
+        let newTurt: Turtle = this.duplicate();
+        this.history.push(newTurt);
+    }
+
+    endBranch(): boolean {
+        if (this.history.length > 0) {
+            let newBranch: Turtle = this.history.pop();
+            this.copy(newBranch);
+            return true;
+        }
+        return false;
+    }
+
+    makeNode(): Node {
+        let newNode = new Node(this.position);
+        this.node = newNode;
+        return newNode;
     }
 
     /*moveForward(amount: number): DrawNode {

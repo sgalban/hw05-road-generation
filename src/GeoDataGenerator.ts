@@ -1,6 +1,7 @@
 import {vec2, vec3} from 'gl-matrix';
 
-const SEED2: vec2 = vec2.fromValues(0.31415, 0.6456);
+// This seed is synced with the one on the GPU. Must be changed in tandem
+const SEED2: vec2 = vec2.fromValues(0.5415, 0.5056);
 
 function mix(x1: number, x2: number, t: number) {
     t = t < 0 ? 0 : t;
@@ -40,8 +41,12 @@ function vsub(v: vec2, u: vec2) {
     return vec2.subtract(vec2.create(), v, u);
 }
 
+
 function random1(p: vec2, seed: vec2) : number {
-    return fract(Math.sin(vec2.dot(vec2.add(vec2.create(), p, seed), vec2.fromValues(127.1, 311.7))) * 43758.5453);
+    return fract(Math.sin(vec2.dot(
+        vec2.add(vec2.create(), p, seed),
+        vec2.fromValues(127.1, 311.7))
+    ) * 1.0);
 }
 
 function random2(p: vec2, seed: vec2) : vec2 {
@@ -49,7 +54,7 @@ function random2(p: vec2, seed: vec2) : vec2 {
         vfract(vec2.scale(vec2.create(), vsin(vec2.fromValues(
             vec2.dot(vec2.add(vec2.create(), p, seed), vec2.fromValues(311.7, 127.1)),
             vec2.dot(vec2.add(vec2.create(), p, seed), vec2.fromValues(269.5, 183.3)))), 
-            85734.3545)
+            1.0)
         )
     );
 }
@@ -134,19 +139,12 @@ function fbm(noisePos: vec2, numOctaves: number, startFrequency: number) : numbe
 }
 
 export function getTerrainHeight(pos: vec2) : number {
+    
     return Math.pow(recursivePerlin(pos, 3, 0.5), 2.0) - Math.pow(fbm(pos, 3, 0.05), 2.0);
 }
 
 export function isLand(pos: vec2) {
     return getTerrainHeight(pos) > 0.0125;
-}
-
-function exaggerate(t: number) : number {
-    return (
-        t < 0.375 ? 0.0 :
-        t > 0.375 && t < 0.625 ? cubicFalloff(4.0 * t - 1.5) :
-        1.0
-    );
 }
 
 function normalClamp(t: number) {
@@ -156,13 +154,13 @@ function normalClamp(t: number) {
 function populationHeightFalloff(height: number) : number {
     return(
         height > 0.025 && height < 0.085 ? cubicFalloff((height - 0.025) / 0.06) :
-        height > 0.085 && height < 0.140 ? 1.0 :
-        height > 0.140 && height < 0.200 ? cubicFalloff(-(height - 0.140) / 0.06 + 1.0) :
+        height > 0.085 && height < 0.200 ? 1.0 :
+        height > 0.200 && height < 0.260 ? cubicFalloff(-(height - 0.200) / 0.06 + 1.0) :
         0.0
     );
 }
 
 export function getPopulationDensity(pos: vec2) : number {
     let height = getTerrainHeight(pos);
-    return normalClamp(Math.pow(exaggerate(perlin(pos, 0.3)), 3.0) * 2.5) * populationHeightFalloff(height);
+    return normalClamp(Math.pow(perlin(pos, 0.3), 3.0) * 2.5) * populationHeightFalloff(height);
 }

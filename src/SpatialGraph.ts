@@ -2,9 +2,13 @@ import {vec2} from 'gl-matrix';
 
 export class Node {
     position: vec2;
+    x: number;
+    y: number;
 
     constructor(_position: vec2) {
         this.position = _position;
+        this.x = _position[0];
+        this.y = _position[1];
     }
 }
 

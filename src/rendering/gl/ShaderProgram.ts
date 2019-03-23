@@ -24,7 +24,10 @@ class ShaderProgram {
   attrPos: number;
   attrNor: number;
   attrCol: number; // This time, it's an instanced rendering attribute, so each particle can have a unique color. Not per-vertex, but per-instance.
-  attrTranslate: number; // Used in the vertex shader during instanced rendering to offset the vertex positions to the particle's drawn position.
+  //attrTranslate: number; // Used in the vertex shader during instanced rendering to offset the vertex positions to the particle's drawn position.
+  //attrAngle: number;
+  //attrLength: number;
+  attrEnd: number;
   attrUV: number;
 
   unifModel: WebGLUniformLocation;
@@ -52,7 +55,10 @@ class ShaderProgram {
     this.attrPos = gl.getAttribLocation(this.prog, "vs_Pos");
     this.attrNor = gl.getAttribLocation(this.prog, "vs_Nor");
     this.attrCol = gl.getAttribLocation(this.prog, "vs_Col");
-    this.attrTranslate = gl.getAttribLocation(this.prog, "vs_Translate");
+    //this.attrTranslate = gl.getAttribLocation(this.prog, "vs_Translate");
+    //this.attrAngle = gl.getAttribLocation(this.prog, "vs_Angle");
+    //this.attrLength = gl.getAttribLocation(this.prog, "vs_Length");
+    this.attrEnd = gl.getAttribLocation(this.prog, "vs_Endpoints");
     this.attrUV = gl.getAttribLocation(this.prog, "vs_UV");
 
     this.unifModel      = gl.getUniformLocation(this.prog, "u_Model");
@@ -90,7 +96,6 @@ class ShaderProgram {
   setDimensions(width: number, height: number) {
     this.use();
     if(this.unifDimensions !== -1) {
-      console.log("Setting " + width + ", " + height);
       gl.uniform2f(this.unifDimensions, width, height);
     }
   }
@@ -130,12 +135,13 @@ class ShaderProgram {
     }
   }
 
-  setMode(displayHeight: boolean, displayPop: boolean) {
+  setMode(displayHeight: boolean, displayPop: boolean, displayGrid: boolean) {
     this.use();
     if (this.unifMode !== -1) {
       let mode = 0
         | (displayHeight ? 1 : 0)
-        | (displayPop ? 2 : 0);
+        | (displayPop ? 2 : 0)
+        | (displayGrid ? 4 : 0);
       gl.uniform1i(this.unifMode, mode);
     }
   }
@@ -161,10 +167,28 @@ class ShaderProgram {
       gl.vertexAttribDivisor(this.attrCol, 1); // Advance 1 index in col VBO for each drawn instance
     }
 
-    if (this.attrTranslate != -1 && d.bindTranslate()) {
+    /*if (this.attrTranslate != -1 && d.bindTranslate()) {
       gl.enableVertexAttribArray(this.attrTranslate);
-      gl.vertexAttribPointer(this.attrTranslate, 3, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribPointer(this.attrTranslate, 2, gl.FLOAT, false, 0, 0);
       gl.vertexAttribDivisor(this.attrTranslate, 1); // Advance 1 index in translate VBO for each drawn instance
+    }
+
+    if (this.attrAngle != -1 && d.bindUV()) {
+      gl.enableVertexAttribArray(this.attrAngle);
+      gl.vertexAttribPointer(this.attrAngle, 1, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribDivisor(this.attrAngle, 1); // Advance 1 index in pos VBO for each vertex
+    }
+
+    if (this.attrLength != -1 && d.bindUV()) {
+      gl.enableVertexAttribArray(this.attrLength);
+      gl.vertexAttribPointer(this.attrLength, 1, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribDivisor(this.attrLength, 1); // Advance 1 index in pos VBO for each vertex
+    }*/
+
+    if (this.attrEnd != -1 && d.bindEndpoints()) {
+      gl.enableVertexAttribArray(this.attrEnd);
+      gl.vertexAttribPointer(this.attrEnd, 4, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribDivisor(this.attrEnd, 1);
     }
 
     if (this.attrUV != -1 && d.bindUV()) {
@@ -192,7 +216,9 @@ class ShaderProgram {
     if (this.attrPos != -1) gl.disableVertexAttribArray(this.attrPos);
     if (this.attrNor != -1) gl.disableVertexAttribArray(this.attrNor);
     if (this.attrCol != -1) gl.disableVertexAttribArray(this.attrCol);
-    if (this.attrTranslate != -1) gl.disableVertexAttribArray(this.attrTranslate);
+    /*if (this.attrTranslate != -1) gl.disableVertexAttribArray(this.attrTranslate);
+    if (this.attrLength != -1) gl.disableVertexAttribArray(this.attrLength);
+    if (this.attrAngle != -1) gl.disableVertexAttribArray(this.attrAngle);*/
     if (this.attrUV != -1) gl.disableVertexAttribArray(this.attrUV);
   }
 };

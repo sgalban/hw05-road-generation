@@ -6,28 +6,37 @@ abstract class Drawable {
   bufIdx: WebGLBuffer;
   bufPos: WebGLBuffer;
   bufNor: WebGLBuffer;
-  bufTranslate: WebGLBuffer;
+  //bufTranslate: WebGLBuffer;
   bufCol: WebGLBuffer;
   bufUV: WebGLBuffer;
+  //bufAngle: WebGLBuffer;
+  //bufLength: WebGLBuffer;
+  bufEnd: WebGLBuffer;
 
   idxGenerated: boolean = false;
   posGenerated: boolean = false;
   norGenerated: boolean = false;
   colGenerated: boolean = false;
-  translateGenerated: boolean = false;
+  //translateGenerated: boolean = false;
   uvGenerated: boolean = false;
+  //angleGenerated: boolean = false;
+  //lengthGenerated: boolean = false;
+  endGenerated: boolean = false;
 
   numInstances: number = 0; // How many instances of this Drawable the shader program should draw
 
   abstract create() : void;
 
-  destory() {
+  destroy() {
     gl.deleteBuffer(this.bufIdx);
     gl.deleteBuffer(this.bufPos);
     gl.deleteBuffer(this.bufNor);
     gl.deleteBuffer(this.bufCol);
-    gl.deleteBuffer(this.bufTranslate);
+    //gl.deleteBuffer(this.bufTranslate);
     gl.deleteBuffer(this.bufUV);
+    //gl.deleteBuffer(this.bufAngle);
+    //gl.deleteBuffer(this.bufLength);
+    gl.deleteBuffer(this.bufEnd);
   }
 
   generateIdx() {
@@ -50,9 +59,23 @@ abstract class Drawable {
     this.bufCol = gl.createBuffer();
   }
 
-  generateTranslate() {
+  /*generateTranslate() {
     this.translateGenerated = true;
     this.bufTranslate = gl.createBuffer();
+  }
+
+  generateAngle() {
+    this.angleGenerated = true;
+    this.bufAngle = gl.createBuffer();
+  }
+
+  generateLength() {
+    this.lengthGenerated = true;
+    this.bufLength = gl.createBuffer();
+  }*/
+  generateEndpoints() {
+    this.endGenerated = true;
+    this.bufEnd = gl.createBuffer();
   }
 
   generateUV() {
@@ -88,11 +111,31 @@ abstract class Drawable {
     return this.colGenerated;
   }
 
-  bindTranslate(): boolean {
+  /*bindTranslate(): boolean {
     if (this.translateGenerated) {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTranslate);
     }
     return this.translateGenerated;
+  }
+
+  bindAngle(): boolean {
+    if (this.angleGenerated) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.bufAngle);
+    }
+    return this.angleGenerated;
+  }
+
+  bindLength(): boolean {
+    if (this.lengthGenerated) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.bufLength);
+    }
+    return this.lengthGenerated;
+  }*/
+  bindEndpoints(): boolean {
+    if (this.endGenerated) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.bufEnd);
+    }
+    return this.endGenerated;
   }
 
   bindUV(): boolean {

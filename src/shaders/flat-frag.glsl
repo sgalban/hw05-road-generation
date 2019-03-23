@@ -9,14 +9,14 @@ uniform int u_Mode;
 in vec2 fs_Pos;
 out vec4 out_Col;
 
-const vec2 SEED2 = vec2(0.31415, 0.6456);
+const vec2 SEED2 = vec2(0.5415, 0.5056);
 
 float random1(vec2 p , vec2 seed) {
-    return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 43758.5453);
+    return fract(sin(dot(p + seed, vec2(127.1, 311.7))) * 1.0);
 }
 
 vec2 random2(vec2 p , vec2 seed) {
-    return fract(sin(vec2(dot(p + seed, vec2(311.7, 127.1)), dot(p + seed, vec2(269.5, 183.3)))) * 85734.3545);
+    return fract(sin(vec2(dot(p + seed, vec2(311.7, 127.1)), dot(p + seed, vec2(269.5, 183.3)))) * 1.0);
 }
 
 float cubicFalloff(float t) {
@@ -149,9 +149,9 @@ vec3 getHeightColor(float height, vec2 pos) {
     vec3 SAND = vec3(0.9, 0.9, 0.5);
     vec3 GRASS1 = vec3(0, 0.5, 0);
     vec3 GRASS2 = vec3(0.4, 0.7, 0.1);
-    vec3 DIRT = vec3(0.4, 0.25, 0.1);
-    vec3 STONE = vec3(0.5, 0.5, 0.5);
-    vec3 SNOW = vec3(0.97, 0.97, 1.0);
+    vec3 DIRT = vec3(0.5, 0.7, 0.1);
+    vec3 STONE = vec3(0.4, 0.25, 0.1);
+    vec3 SNOW = vec3(0.5, 0.5, 0.5);
 
     if (height < 0.0) {
         return WATER;
@@ -183,24 +183,16 @@ vec3 getHeightColor(float height, vec2 pos) {
 float populationHeightFalloff(float height) {
     return(
         height > 0.025 && height < 0.085 ? cubicFalloff((height - 0.025) / 0.06) :
-        height > 0.085 && height < 0.140 ? 1.0 :
-        height > 0.140 && height < 0.200 ? cubicFalloff(-(height - 0.140) / 0.06 + 1.0) :
+        height > 0.085 && height < 0.200 ? 1.0 :
+        height > 0.200 && height < 0.260 ? cubicFalloff(-(height - 0.200) / 0.06 + 1.0) :
         0.0
-    );
-}
-
-float exaggerate(float t) {
-    return (
-        t < 0.375 ? 0.0 :
-        t > 0.375 && t < 0.625 ? cubicFalloff(4.0 * t - 1.5) :
-        1.0
     );
 }
 
 vec3 getRawColor(vec2 pos) {
 
     float height = pow(recursivePerlin(pos, 3, 0.5), 2.0) - pow(fbm(pos, 3, 0.05), 2.0);
-    float population = clamp(pow(exaggerate(perlin(pos, 0.3)), 3.0) * 2.5, 0.0, 1.0) * populationHeightFalloff(height);
+    float population = clamp(pow(perlin(pos, 0.3), 3.0) * 2.5, 0.0, 1.0) * populationHeightFalloff(height);
 
     vec3 heightColor = getHeightColor(height, pos);
     vec3 color = ((u_Mode & 2) > 0) ? mix(heightColor, vec3(1, 0, 0), population) : heightColor;
@@ -208,9 +200,33 @@ vec3 getRawColor(vec2 pos) {
     return color;
 }
 
+vec2 toPixelSpace(vec2 pos) {
+    float aspectRatio = u_Dimensions.x / u_Dimensions.y;
+    float x = ((pos.x / aspectRatio / 10.0) + 1.0) / 2.0 * u_Dimensions.x;
+    float y = ((pos.y / 10.0) + 1.0) / 2.0 * u_Dimensions.y;
+    return vec2(x, y);
+}
+
+bool onGrid(vec2 pos) {
+    vec2 pixelPoint = toPixelSpace(pos);
+    float nearestCol1 = toPixelSpace(vec2(floor(pos.x), 0.0)).x;
+    float nearestCol2 = toPixelSpace(vec2(ceil(pos.x), 0.0)).x;
+    float nearestRow1 = toPixelSpace(vec2(0.0, floor(pos.y))).y;
+    float nearestRow2 = toPixelSpace(vec2(0.0, ceil(pos.y))).y;
+    return (abs(pixelPoint.x - nearestCol1) <= 1.0) || (abs(pixelPoint.x - nearestCol2) <= 1.0)
+        || (abs(pixelPoint.y - nearestRow1) <= 1.0) || (abs(pixelPoint.y - nearestRow2) <= 1.0);
+}
+
 void main() {
     float aspectRatio = u_Dimensions.x / u_Dimensions.y;
     vec2 pos = vec2(fs_Pos.x * 10.0 * aspectRatio, fs_Pos.y * 10.0);
+    vec3 color = getRawColor(pos);
 
-    out_Col = vec4(getRawColor(pos), 1.0);
+    bool showGrid = (u_Mode & 4) > 0;
+    color = (showGrid && onGrid(pos)) ? vec3(0.5) : color;
+    if (showGrid && distance(pos, vec2(0, 0)) < 0.15) {
+        color = vec3(1, 0, 1);
+    }
+
+    out_Col = vec4(color, 1.0);
 }

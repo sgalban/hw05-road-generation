@@ -15,7 +15,8 @@ import HighwayGenerator from './HighwayGenerator';
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
     "Show Height": false,
-    "Show Population": false
+    "Show Population": false,
+    "Show Grid": false
 };
 
 let square: Square;
@@ -34,7 +35,7 @@ function loadScene() {
     // offsets and gradiated colors for a 100x100 grid
     // of squares, even though the VBO data for just
     // one square is actually passed to the GPU
-    let offsetsArray = [];
+    /*let offsetsArray = [];
     let colorsArray = [];
     let n: number = 100.0;
     for(let i = 0; i < n; i++) {
@@ -52,9 +53,10 @@ function loadScene() {
     let offsets: Float32Array = new Float32Array(offsetsArray);
     let colors: Float32Array = new Float32Array(colorsArray);
     square.setInstanceVBOs(offsets, colors);
-    square.setNumInstances(n * n); // grid of "particles"
+    square.setNumInstances(n * n); // grid of "particles"*/
 
     highwayGenerator.generateRoadNetwork();
+    highwayGenerator.drawHighwayNetwork(square);
 }
 
 function main() {
@@ -70,6 +72,7 @@ function main() {
     const gui = new DAT.GUI();
     gui.add(controls, "Show Height");
     gui.add(controls, "Show Population");
+    gui.add(controls, "Show Grid");
   
     // get canvas and webgl context
     const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -99,22 +102,23 @@ function main() {
         new Shader(gl.FRAGMENT_SHADER, require('./shaders/flat-frag.glsl')),
     ]);
     flat.setDimensions(window.innerWidth, window.innerHeight);
-  
+
     // This function will be called every frame
     function tick() {
         camera.update();
         stats.begin();
 
+        time++;
+        flat.setTime(time);
         instancedShader.setTime(time);
-        flat.setTime(time++);
-        flat.setMode(controls["Show Height"], controls["Show Population"]);
+        flat.setMode(controls["Show Height"], controls["Show Population"], controls["Show Grid"]);
 
         gl.viewport(0, 0, window.innerWidth, window.innerHeight);
         renderer.clear();
         renderer.render(camera, flat, [screenQuad]);
-        /*renderer.render(camera, instancedShader, [
+        renderer.render(camera, instancedShader, [
           square,
-        ]);*/
+        ]);
         stats.end();
     
         // Tell the browser to call `tick` again whenever it renders a new frame
@@ -126,13 +130,15 @@ function main() {
         camera.setAspectRatio(window.innerWidth / window.innerHeight);
         camera.updateProjectionMatrix();
         flat.setDimensions(window.innerWidth, window.innerHeight);
+        instancedShader.setDimensions(window.innerWidth, window.innerHeight);
     }, false);
   
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.setAspectRatio(window.innerWidth / window.innerHeight);
     camera.updateProjectionMatrix();
     flat.setDimensions(window.innerWidth, window.innerHeight);
-  
+    instancedShader.setDimensions(window.innerWidth, window.innerHeight);
+
     // Start the render loop
     tick();
 }
