@@ -8,6 +8,7 @@ export default class Turtle {
     color: vec3;
     recursionDepth: number;
     history: Turtle[];
+    newBranch = false;
 
     constructor() {
         this.position = vec2.fromValues(0, 0);
@@ -16,6 +17,7 @@ export default class Turtle {
         this.recursionDepth = 0;
         this.node = null;
         this.history = [];
+        this.newBranch = false;
     }
 
     setPosition(pos: vec2): void {
@@ -63,13 +65,14 @@ export default class Turtle {
     branch(angle: number) {
         let newTurt: Turtle = this.duplicate();
         newTurt.rotate(angle);
-        this.history.push(newTurt);
+        this.history.unshift(newTurt);
     }
 
     endBranch(): boolean {
         if (this.history.length > 0) {
             let newBranch: Turtle = this.history.pop();
             this.copy(newBranch);
+            this.newBranch = true;
             return true;
         }
         return false;
@@ -78,7 +81,7 @@ export default class Turtle {
     makeNode(): Node {
         let newNode = new Node(this.position);
         this.node = newNode;
-        return newNode;
+        return this.node;
     }
 
     /*moveForward(amount: number): DrawNode {

@@ -14,9 +14,15 @@ export class Node {
 
 export default class SpatialGraph {
     adjacency: Map<Node, Node[]>;
+    private numEdges: number;
 
     constructor() {
         this.adjacency = new Map<Node, Node[]>();
+        this.numEdges = 0;
+    }
+
+    getNumEdges(): number {
+        return this.numEdges;
     }
 
     addNode(n: Node) {
@@ -25,15 +31,18 @@ export default class SpatialGraph {
         }
     }
 
-    connect(n1: Node, n2: Node) {
+    connect(n1: Node, n2: Node): boolean {
+        let success: boolean = false;
         if (!this.adjacency.has(n1)) {
             this.adjacency.set(n1, [n2]);
+            success = true;
         }
         else {
             let adj1 = this.adjacency.get(n1);
             if (adj1.indexOf(n2) === -1) {
                 adj1.push(n2);
                 this.adjacency.set(n1, adj1);
+                success = true;
             }
         }
         if (!this.adjacency.has(n2)) {
@@ -46,5 +55,9 @@ export default class SpatialGraph {
                 this.adjacency.set(n2, adj2);
             }
         }
+        if (success) {
+            this.numEdges++;
+        }
+        return success;
     }
 }

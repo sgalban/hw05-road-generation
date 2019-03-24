@@ -16,7 +16,9 @@ import HighwayGenerator from './HighwayGenerator';
 const controls = {
     "Show Height": false,
     "Show Population": false,
-    "Show Grid": false
+    "Show Grid": false,
+    "Branching Angle": 45,
+    "Road Count": 20,
 };
 
 let square: Square;
@@ -55,7 +57,7 @@ function loadScene() {
     square.setInstanceVBOs(offsets, colors);
     square.setNumInstances(n * n); // grid of "particles"*/
 
-    highwayGenerator.generateRoadNetwork();
+    highwayGenerator.generateRoadNetwork(controls["Branching Angle"], controls["Road Count"]);
     highwayGenerator.drawHighwayNetwork(square);
 }
 
@@ -73,6 +75,8 @@ function main() {
     gui.add(controls, "Show Height");
     gui.add(controls, "Show Population");
     gui.add(controls, "Show Grid");
+    gui.add(controls, "Branching Angle", 15, 60);
+    gui.add(controls, "Road Count", 0, 400);
   
     // get canvas and webgl context
     const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -103,6 +107,9 @@ function main() {
     ]);
     flat.setDimensions(window.innerWidth, window.innerHeight);
 
+    let lastBranchingAngle = controls["Branching Angle"];
+    let lastRoadCount = controls["Road Count"];
+
     // This function will be called every frame
     function tick() {
         camera.update();
@@ -112,6 +119,18 @@ function main() {
         flat.setTime(time);
         instancedShader.setTime(time);
         flat.setMode(controls["Show Height"], controls["Show Population"], controls["Show Grid"]);
+
+        if (controls["Branching Angle"] != lastBranchingAngle) {
+            lastBranchingAngle = controls["Branching Angle"];
+            highwayGenerator.generateRoadNetwork(lastBranchingAngle, lastRoadCount);
+            highwayGenerator.drawHighwayNetwork(square);
+        }
+
+        if (controls["Road Count"] != lastRoadCount) {
+            lastRoadCount = controls["Road Count"];
+            highwayGenerator.generateRoadNetwork(lastBranchingAngle, lastRoadCount);
+            highwayGenerator.drawHighwayNetwork(square);
+        }
 
         gl.viewport(0, 0, window.innerWidth, window.innerHeight);
         renderer.clear();
