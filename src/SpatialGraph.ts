@@ -10,10 +10,18 @@ export class Node {
         this.x = _position[0];
         this.y = _position[1];
     }
+
+    distance(other: Node) {
+        return vec2.distance(this.position, other.position);
+    }
+
+    equal(other: Node) {
+        return this.x === other.x && this.y === other.y;
+    }
 }
 
 export default class SpatialGraph {
-    adjacency: Map<Node, Node[]>;
+    private adjacency: Map<Node, Node[]>;
     private numEdges: number;
 
     constructor() {
@@ -31,8 +39,23 @@ export default class SpatialGraph {
         }
     }
 
+    areAdjacent(n1: Node, n2: Node) {
+        let equal = false;
+        this.adjacency.forEach((neighbors: Node[], node: Node) => {
+            for (let neighbor of neighbors) {
+                if (n1.equal(node) && n2.equal(neighbor)) {
+                    equal = true;
+                }
+            }
+        });
+        return equal;
+    }
+
     connect(n1: Node, n2: Node): boolean {
         let success: boolean = false;
+        if (n1.equal(n2)) {
+            return false;
+        }
         if (!this.adjacency.has(n1)) {
             this.adjacency.set(n1, [n2]);
             success = true;
@@ -59,5 +82,13 @@ export default class SpatialGraph {
             this.numEdges++;
         }
         return success;
+    }
+
+    getNodes(): Node[] {
+        let nodes: Node[] = [];
+        this.adjacency.forEach((neighbors: Node[], node: Node) => {
+            nodes.push(node);
+        });
+        return nodes;
     }
 }

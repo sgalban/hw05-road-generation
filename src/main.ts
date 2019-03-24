@@ -19,6 +19,7 @@ const controls = {
     "Show Grid": false,
     "Branching Angle": 45,
     "Road Count": 20,
+    "Snap Radius": 0.2,
 };
 
 let square: Square;
@@ -57,7 +58,11 @@ function loadScene() {
     square.setInstanceVBOs(offsets, colors);
     square.setNumInstances(n * n); // grid of "particles"*/
 
-    highwayGenerator.generateRoadNetwork(controls["Branching Angle"], controls["Road Count"]);
+    highwayGenerator.generateRoadNetwork(
+        controls["Branching Angle"],
+        controls["Road Count"],
+        controls["Snap Radius"]
+    );
     highwayGenerator.drawHighwayNetwork(square);
 }
 
@@ -77,6 +82,7 @@ function main() {
     gui.add(controls, "Show Grid");
     gui.add(controls, "Branching Angle", 15, 60);
     gui.add(controls, "Road Count", 0, 400);
+    gui.add(controls, "Snap Radius", 0, 1.0);
   
     // get canvas and webgl context
     const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -109,6 +115,7 @@ function main() {
 
     let lastBranchingAngle = controls["Branching Angle"];
     let lastRoadCount = controls["Road Count"];
+    let lastSnapRadius = controls["Snap Radius"];
 
     // This function will be called every frame
     function tick() {
@@ -119,16 +126,25 @@ function main() {
         flat.setTime(time);
         instancedShader.setTime(time);
         flat.setMode(controls["Show Height"], controls["Show Population"], controls["Show Grid"]);
+        let regenerate = false;
 
         if (controls["Branching Angle"] != lastBranchingAngle) {
             lastBranchingAngle = controls["Branching Angle"];
-            highwayGenerator.generateRoadNetwork(lastBranchingAngle, lastRoadCount);
-            highwayGenerator.drawHighwayNetwork(square);
+            regenerate = true;
         }
 
         if (controls["Road Count"] != lastRoadCount) {
             lastRoadCount = controls["Road Count"];
-            highwayGenerator.generateRoadNetwork(lastBranchingAngle, lastRoadCount);
+            regenerate = true;
+        }
+
+        if (controls["Snap Radius"] != lastSnapRadius) {
+            lastSnapRadius = controls["Snap Radius"];
+            regenerate = true;
+        }
+
+        if (regenerate) {
+            highwayGenerator.generateRoadNetwork(lastBranchingAngle, lastRoadCount, lastSnapRadius);
             highwayGenerator.drawHighwayNetwork(square);
         }
 
