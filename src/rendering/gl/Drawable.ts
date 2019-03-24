@@ -12,6 +12,7 @@ abstract class Drawable {
   //bufAngle: WebGLBuffer;
   //bufLength: WebGLBuffer;
   bufEnd: WebGLBuffer;
+  bufThic: WebGLBuffer;
 
   idxGenerated: boolean = false;
   posGenerated: boolean = false;
@@ -22,6 +23,7 @@ abstract class Drawable {
   //angleGenerated: boolean = false;
   //lengthGenerated: boolean = false;
   endGenerated: boolean = false;
+  thicGenerated: boolean = false;
 
   numInstances: number = 0; // How many instances of this Drawable the shader program should draw
 
@@ -37,6 +39,7 @@ abstract class Drawable {
     //gl.deleteBuffer(this.bufAngle);
     //gl.deleteBuffer(this.bufLength);
     gl.deleteBuffer(this.bufEnd);
+    gl.deleteBuffer(this.bufThic);
   }
 
   generateIdx() {
@@ -76,6 +79,11 @@ abstract class Drawable {
   generateEndpoints() {
     this.endGenerated = true;
     this.bufEnd = gl.createBuffer();
+  }
+
+  generateThickness() {
+    this.thicGenerated = true;
+    this.bufThic = gl.createBuffer();
   }
 
   generateUV() {
@@ -136,6 +144,13 @@ abstract class Drawable {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.bufEnd);
     }
     return this.endGenerated;
+  }
+
+  bindThickness(): boolean {
+    if (this.thicGenerated) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.bufThic);
+    }
+    return this.thicGenerated;
   }
 
   bindUV(): boolean {

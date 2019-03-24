@@ -7,7 +7,7 @@ export default class Turtle {
     angle: number;
     color: vec3;
     recursionDepth: number;
-    history: Turtle[];
+    private history: Turtle[];
     newBranch = false;
 
     constructor() {

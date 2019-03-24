@@ -11,21 +11,31 @@ import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
 import SpatialGraph, {Node} from './SpatialGraph';
 import HighwayGenerator from './HighwayGenerator';
 
+let square: Square;
+let screenQuad: ScreenQuad;
+let time: number = 0.0;
+let highwayGenerator: HighwayGenerator = new HighwayGenerator();
+
+let branchingAngle = 180;
+let roadCount = 100;
+let snapRadius = 0.2;
+let highwayThickness = 0.1;
+
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
     "Show Height": false,
     "Show Population": false,
     "Show Grid": false,
-    "Branching Angle": 45,
-    "Road Count": 20,
-    "Snap Radius": 0.2,
+    "Branching Angle": branchingAngle,
+    "Road Count": roadCount,
+    "Snap Radius": snapRadius,
+    "Highway Thickness": highwayThickness,
+    "Generate": () => {
+        highwayGenerator.generateRoadNetwork(branchingAngle, roadCount, snapRadius);
+        highwayGenerator.drawHighwayNetwork(square, highwayThickness);
+    }
 };
-
-let square: Square;
-let screenQuad: ScreenQuad;
-let time: number = 0.0;
-let highwayGenerator: HighwayGenerator = new HighwayGenerator();
 
 function loadScene() {
     square = new Square();
@@ -63,7 +73,7 @@ function loadScene() {
         controls["Road Count"],
         controls["Snap Radius"]
     );
-    highwayGenerator.drawHighwayNetwork(square);
+    highwayGenerator.drawHighwayNetwork(square, highwayThickness);
 }
 
 function main() {
@@ -80,9 +90,11 @@ function main() {
     gui.add(controls, "Show Height");
     gui.add(controls, "Show Population");
     gui.add(controls, "Show Grid");
-    gui.add(controls, "Branching Angle", 15, 60);
-    gui.add(controls, "Road Count", 0, 400);
-    gui.add(controls, "Snap Radius", 0, 1.0);
+    gui.add(controls, "Branching Angle", 15, 180);
+    gui.add(controls, "Road Count", 0, 300);
+    gui.add(controls, "Snap Radius", 0, 5.0);
+    gui.add(controls, "Highway Thickness", 0.05, 0.2);
+    gui.add(controls, "Generate");
   
     // get canvas and webgl context
     const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -112,10 +124,7 @@ function main() {
         new Shader(gl.FRAGMENT_SHADER, require('./shaders/flat-frag.glsl')),
     ]);
     flat.setDimensions(window.innerWidth, window.innerHeight);
-
-    let lastBranchingAngle = controls["Branching Angle"];
-    let lastRoadCount = controls["Road Count"];
-    let lastSnapRadius = controls["Snap Radius"];
+    let lastThickness = highwayThickness;
 
     // This function will be called every frame
     function tick() {
@@ -128,24 +137,14 @@ function main() {
         flat.setMode(controls["Show Height"], controls["Show Population"], controls["Show Grid"]);
         let regenerate = false;
 
-        if (controls["Branching Angle"] != lastBranchingAngle) {
-            lastBranchingAngle = controls["Branching Angle"];
-            regenerate = true;
-        }
+        branchingAngle = controls["Branching Angle"];
+        roadCount = controls["Road Count"];
+        snapRadius = controls["Snap Radius"];
+        highwayThickness = controls["Highway Thickness"];
 
-        if (controls["Road Count"] != lastRoadCount) {
-            lastRoadCount = controls["Road Count"];
-            regenerate = true;
-        }
-
-        if (controls["Snap Radius"] != lastSnapRadius) {
-            lastSnapRadius = controls["Snap Radius"];
-            regenerate = true;
-        }
-
-        if (regenerate) {
-            highwayGenerator.generateRoadNetwork(lastBranchingAngle, lastRoadCount, lastSnapRadius);
-            highwayGenerator.drawHighwayNetwork(square);
+        if (lastThickness != highwayThickness) {
+            lastThickness = highwayThickness;
+            highwayGenerator.drawHighwayNetwork(square, highwayThickness);
         }
 
         gl.viewport(0, 0, window.innerWidth, window.innerHeight);

@@ -55,12 +55,14 @@ export default class HighwayGenerator {
     network: SpatialGraph;
     endpoints: number[];
     numRoads: number;
+    snapRadius: number;
 
     constructor() {
         this.turtle = new Turtle();
         this.network = new SpatialGraph();
         this.endpoints = [];
         this.numRoads = 0.0;
+        this.snapRadius = 0;
     }
 
     isWater(pos: vec2) {
@@ -72,16 +74,17 @@ export default class HighwayGenerator {
         this.network = new SpatialGraph();
         this.turtle = new Turtle();
         this.turtle.setAngle(20);
+        this.snapRadius = snapRadius;
         let sinceLastBranch = 0;
 
         // Seed is arbitrary. Can be safely changed without changing anything else
-        let seed1: vec2 = vec2.fromValues(0.178234, 0.64141);
+        let seed1: vec2 = vec2.fromValues(0.178244, 0.64141);
         let seed2: vec2 = vec2.fromValues(0.229524, 0.76456);
 
         // Find an appropriate point to begin the highway system
         function findValidPoint() {
             let startPoint: vec2 = randomInRange(vec2.fromValues(-20, -10), vec2.fromValues(20, 10), seed1);
-            while (getPopulationDensity(startPoint) < 0.5) {
+            while (getPopulationDensity(startPoint) < 0.25) {
                 seed1[0] += startPoint[0];
                 seed1[1] += startPoint[1];
                 startPoint = randomInRange(vec2.fromValues(0, 0), vec2.fromValues(20, 10), seed1);
@@ -101,18 +104,18 @@ export default class HighwayGenerator {
             i++;
             let curPos = vec2.fromValues(this.turtle.position[0], this.turtle.position[1]);
             let curAngle = this.turtle.angle;
-            let length = 2.0 * (1.75 - getPopulationDensity(curPos));
+            let length = 2.5 * (2.0 - getPopulationDensity(curPos));
             let curNode = this.turtle.node;
 
             let rotatingAngle = 0;
             if (!this.turtle.newBranch) {
                 // Send out 5 rays to test for population
-                let randomness = random1(curPos, seed2) * 6.0 - 3.0;
-                let angle0 = randomness - branchingAngle * 2.0;
-                let angle1 = randomness - branchingAngle
+                let randomness = 0;//random1(curPos, seed2) * 6.0 - 3.0;
+                let angle0 = randomness - branchingAngle / 2.0;
+                let angle1 = randomness - branchingAngle / 4.0;
                 let angle2 = randomness;
-                let angle3 = randomness + branchingAngle;
-                let angle4 = randomness + branchingAngle * 2.0;
+                let angle3 = randomness + branchingAngle / 4.0;
+                let angle4 = randomness + branchingAngle / 2.0;
                 vec2.add(seed2, seed2, curPos);
                 let test0: vec2 = this.turtle.dryMove(angle0, length);
                 let test1: vec2 = this.turtle.dryMove(angle1, length);
@@ -141,7 +144,7 @@ export default class HighwayGenerator {
                 }
 
                 // Decide whether or not to branch
-                if (random1(curPos, seed2) < 0.5 && tests[1].density > 0.0) {
+                if (/*random1(curPos, seed2) < 0.5 &&*/ tests[1].density > 0.0) {
                     this.turtle.branch(tests[1].angle);
                 }
                 rotatingAngle = tests[0].angle;
@@ -155,8 +158,8 @@ export default class HighwayGenerator {
 
             // Check if the resulting edge will intersect with a preexisting on
             let intersections: any[] = [];
-            this.network.adjacency.forEach((neighbors: Node[], node: Node) => {
-                for (let neighbor of neighbors) {
+            for (let node of this.network.getNodeIterator()) {
+                for (let neighbor of this.network.getAdjacentEdges(node)) {
                     let e1 = {x1: curNode.x, y1: curNode.y, x2: newNode.x, y2: newNode.y};
                     let e2 = {x1: node.x, y1: node.y, x2: neighbor.x, y2: neighbor.y};
                     let m1 = (e1.y1 - e1.y2) / (e1.x1 - e1.x2);
@@ -165,13 +168,20 @@ export default class HighwayGenerator {
                     let x = (e2.y1 - e1.y1 + e1.x1 * m1 - e2.x1 * m2) / (m1 - m2);
                     if (between(x, e1.x1, e1.x2) && between(x, e2.x1, e2.x2)) {
                         let y = m1 * (x - e1.x1) + e1.y1;
-                        intersections.push({"x": x, "y": y, "distance": vec2.distance(curPos, [x, y])});
+                        intersections.push({
+                            "x": x,
+                            "y": y,
+                            "distance": vec2.distance(curPos, [x, y]),
+                            "n1": node,
+                            "n2": neighbor
+                        });
                     }
                 }
-            });
+            }
+
             // Find the closest of the intersections
             if (intersections.length > 0) {
-                let closest = {"distance": 1000, "x": 0, "y": 0};
+                let closest = intersections[0];
                 for (let intersection of intersections) {
                     if (intersection.distance < closest.distance) {
                         closest = intersection;
@@ -179,6 +189,8 @@ export default class HighwayGenerator {
                 }
                 this.turtle.setPosition(vec2.fromValues(closest.x, closest.y));
                 this.network.connect(curNode, this.turtle.makeNode());
+                this.network.connect(closest.n1, this.turtle.node);
+                this.network.connect(closest.n2, this.turtle.node);
 
                 // Truncate the road to this closest intersection
                 if (this.turtle.endBranch()) {
@@ -205,10 +217,6 @@ export default class HighwayGenerator {
                     nearbyNodes.push(node);
                 }
             });
-            if (i == 2) {
-                console.log(newNode);
-                console.log(nearbyNodes);
-            }
             if (nearbyNodes.length > 0) {
                 let closest: Node = nearbyNodes[0];
                 for (let node of nearbyNodes) {
@@ -229,10 +237,10 @@ export default class HighwayGenerator {
             }*/
 
             // Check if the resulting edge will intersect with a preexisting one when extended
-            /*let extNode: Node = new Node(this.turtle.dryMove(0, snapRadius)); 
+            let extNode: Node = new Node(this.turtle.dryMove(0, snapRadius)); 
             let extTintersections: any[] = [];
-            this.network.adjacency.forEach((neighbors: Node[], node: Node) => {
-                for (let neighbor of neighbors) {
+            for (let node of this.network.getNodeIterator()) {
+                for (let neighbor of this.network.getAdjacentEdges(node)) {
                     let e1 = {x1: curNode.x, y1: curNode.y, x2: extNode.x, y2: extNode.y};
                     let e2 = {x1: node.x, y1: node.y, x2: neighbor.x, y2: neighbor.y};
                     let m1 = (e1.y1 - e1.y2) / (e1.x1 - e1.x2);
@@ -241,13 +249,20 @@ export default class HighwayGenerator {
                     let x = (e2.y1 - e1.y1 + e1.x1 * m1 - e2.x1 * m2) / (m1 - m2);
                     if (between(x, e1.x1, e1.x2) && between(x, e2.x1, e2.x2)) {
                         let y = m1 * (x - e1.x1) + e1.y1;
-                        intersections.push({"x": x, "y": y, "distance": vec2.distance(curPos, [x, y])});
+                        intersections.push({
+                            "x": x,
+                            "y": y,
+                            "distance": vec2.distance(curPos, [x, y]),
+                            "n1": node,
+                            "n2": neighbor
+                        });
                     }
                 }
-            });
+            }
+
             // Find the closest of the intersections
             if (intersections.length > 0) {
-                let closest = {"distance": 1000, "x": 0, "y": 0};
+                let closest = intersections[0];
                 for (let intersection of intersections) {
                     if (intersection.distance < closest.distance) {
                         closest = intersection;
@@ -255,6 +270,8 @@ export default class HighwayGenerator {
                 }
                 this.turtle.setPosition(vec2.fromValues(closest.x, closest.y));
                 this.network.connect(curNode, this.turtle.makeNode());
+                this.network.connect(closest.n1, this.turtle.node);
+                this.network.connect(closest.n2, this.turtle.node);
 
                 // Truncate the road to this closest intersection
                 if (this.turtle.endBranch()) {
@@ -266,7 +283,7 @@ export default class HighwayGenerator {
                     this.network.addNode(this.turtle.makeNode());
                     continue;
                 };
-            }*/
+            }
 
             this.network.connect(curNode, newNode);
             sinceLastBranch++;
@@ -284,10 +301,11 @@ export default class HighwayGenerator {
         // Connect any nearby, lingering nodes
         let nodes: Node[] = this.network.getNodes();
         for (let node1 of nodes) {
-            if (this.network.adjacency.get(node1).length == 1) {
-                for (let node2 of nodes) {
-                    if (!this.network.areAdjacent(node1, node2) && node1.distance(node2) < snapRadius) {
+            if (this.network.getAdjacentEdges(node1).length == 1) {
+                for (let node2 of this.network.getNodesNear(node1, snapRadius)) {
+                    if (!this.network.areAdjacent(node1, node2)) {
                         this.network.connect(node1, node2);
+                        console.log("Connected");
                     }
                 }
             }
@@ -295,23 +313,27 @@ export default class HighwayGenerator {
 
     }
 
-    drawHighwayNetwork(road: Square) {
+    drawHighwayNetwork(road: Square, highwayThickness: number) {
         let seenEdges = new Set();
         this.numRoads = 0;
 
-        this.network.adjacency.forEach((neighbors: Node[], node: Node) => {
-            for (let neighbor of neighbors) {
+        for (let node of this.network.getNodeIterator()) {
+            for (let neighbor of this.network.getAdjacentEdges(node)) {
                 if (!seenEdges.has(JSON.stringify([node.x, node.y, neighbor.x, neighbor.y]))) {
                     seenEdges.add(JSON.stringify([node.x, node.y, neighbor.x, neighbor.y]));
                     seenEdges.add(JSON.stringify([neighbor.x, neighbor.y, node.x, node.y]));
-                    this.endpoints = this.endpoints.concat(node.x, node.y, neighbor.x, neighbor.y);
-                    this.numRoads++;
+                    if (node.distance(neighbor) >= this.snapRadius) {
+                        this.endpoints = this.endpoints.concat(node.x, node.y, neighbor.x, neighbor.y);
+                        this.numRoads++;
+                    }
                 }
             }
-        })
+        }
+
         //console.log(this.numRoads);
         //console.log(this.network.adjacency.size);
-        road.setInstanceVBOs(new Float32Array(this.endpoints));
+        let highwayThicknesses = Array(this.numRoads).fill(highwayThickness);
+        road.setInstanceVBOs(new Float32Array(this.endpoints), new Float32Array(highwayThicknesses));
         road.setNumInstances(this.numRoads);
     }
 }

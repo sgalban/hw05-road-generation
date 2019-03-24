@@ -10,6 +10,7 @@ class Square extends Drawable {
     //angles: Float32Array;
     //lengths: Float32Array;
     endpoints: Float32Array;
+    thickness: Float32Array;
   
   
     constructor() {
@@ -32,6 +33,7 @@ class Square extends Drawable {
         this.generateAngle();
         this.generateLength();*/
         this.generateEndpoints();
+        this.generateThickness();
     
         this.count = this.indices.length;
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.bufIdx);
@@ -42,11 +44,12 @@ class Square extends Drawable {
   
     }
   
-    setInstanceVBOs(endpoints: Float32Array) {
+    setInstanceVBOs(endpoints: Float32Array, thickness: Float32Array) {
         /*this.offsets = offsets;
         this.angles = angles;
         this.lengths = lengths;*/
         this.endpoints = endpoints;
+        this.thickness = thickness;
     
         //gl.bindBuffer(gl.ARRAY_BUFFER, this.bufCol);
         //gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
@@ -58,6 +61,8 @@ class Square extends Drawable {
         gl.bufferData(gl.ARRAY_BUFFER, this.lengths, gl.STATIC_DRAW);*/
         gl.bindBuffer(gl.ARRAY_BUFFER, this.bufEnd);
         gl.bufferData(gl.ARRAY_BUFFER, this.endpoints, gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.bufThic);
+        gl.bufferData(gl.ARRAY_BUFFER, this.thickness, gl.STATIC_DRAW);
     }
 };
 

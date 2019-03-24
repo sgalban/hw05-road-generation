@@ -28,6 +28,7 @@ class ShaderProgram {
   //attrAngle: number;
   //attrLength: number;
   attrEnd: number;
+  attrThic: number;
   attrUV: number;
 
   unifModel: WebGLUniformLocation;
@@ -59,6 +60,7 @@ class ShaderProgram {
     //this.attrAngle = gl.getAttribLocation(this.prog, "vs_Angle");
     //this.attrLength = gl.getAttribLocation(this.prog, "vs_Length");
     this.attrEnd = gl.getAttribLocation(this.prog, "vs_Endpoints");
+    this.attrThic = gl.getAttribLocation(this.prog, "vs_Thickness");
     this.attrUV = gl.getAttribLocation(this.prog, "vs_UV");
 
     this.unifModel      = gl.getUniformLocation(this.prog, "u_Model");
@@ -191,6 +193,12 @@ class ShaderProgram {
       gl.vertexAttribDivisor(this.attrEnd, 1);
     }
 
+    if (this.attrThic != -1 && d.bindThickness()) {
+      gl.enableVertexAttribArray(this.attrThic);
+      gl.vertexAttribPointer(this.attrThic, 1, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribDivisor(this.attrThic, 1);
+    }
+
     if (this.attrUV != -1 && d.bindUV()) {
       gl.enableVertexAttribArray(this.attrUV);
       gl.vertexAttribPointer(this.attrUV, 2, gl.FLOAT, false, 0, 0);
@@ -216,6 +224,8 @@ class ShaderProgram {
     if (this.attrPos != -1) gl.disableVertexAttribArray(this.attrPos);
     if (this.attrNor != -1) gl.disableVertexAttribArray(this.attrNor);
     if (this.attrCol != -1) gl.disableVertexAttribArray(this.attrCol);
+    if (this.attrEnd != -1) gl.disableVertexAttribArray(this.attrEnd);
+    if (this.attrThic != -1) gl.disableVertexAttribArray(this.attrThic);
     /*if (this.attrTranslate != -1) gl.disableVertexAttribArray(this.attrTranslate);
     if (this.attrLength != -1) gl.disableVertexAttribArray(this.attrLength);
     if (this.attrAngle != -1) gl.disableVertexAttribArray(this.attrAngle);*/

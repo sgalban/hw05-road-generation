@@ -1,12 +1,12 @@
 import {vec2} from 'gl-matrix';
 
 export class Node {
-    position: vec2;
-    x: number;
-    y: number;
+    readonly position: vec2;
+    readonly x: number;
+    readonly y: number;
 
     constructor(_position: vec2) {
-        this.position = _position;
+        this.position = vec2.fromValues(_position[0], _position[1]);
         this.x = _position[0];
         this.y = _position[1];
     }
@@ -22,11 +22,13 @@ export class Node {
 
 export default class SpatialGraph {
     private adjacency: Map<Node, Node[]>;
+    private nodeGrid: Map<string, Node[]>;
     private numEdges: number;
 
     constructor() {
         this.adjacency = new Map<Node, Node[]>();
         this.numEdges = 0;
+        this.nodeGrid = new Map<string, Node[]>();
     }
 
     getNumEdges(): number {
@@ -36,6 +38,13 @@ export default class SpatialGraph {
     addNode(n: Node) {
         if (!this.adjacency.has(n)) {
             this.adjacency.set(n, []);
+            let pos = JSON.stringify([Math.floor(n.x), Math.floor(n.y)]);
+            if (this.nodeGrid.has(pos)) {
+                this.nodeGrid.get(pos).push(n);
+            }
+            else {
+                this.nodeGrid.set(pos, [n]);
+            }
         }
     }
 
@@ -90,5 +99,36 @@ export default class SpatialGraph {
             nodes.push(node);
         });
         return nodes;
+    }
+
+    getNodeIterator(): IterableIterator<Node> {
+        return this.adjacency.keys();
+    }
+
+    getAdjacentEdges(node: Node): Node[] {
+        return this.adjacency.get(node);
+    }
+
+    getNodesNear(node: Node, radius: number): Node[] {
+        let gridRad = Math.ceil(radius) + 1;
+        let gridPos = JSON.stringify([Math.floor(node.x), Math.floor(node.y)]);
+        let nodes: Node[] = [];
+
+        for (let i = -gridRad; i <= gridRad; i++) {
+            for (let j = -gridRad; j <= gridRad; j++) {
+                let pos = JSON.stringify([Math.floor(i + node.x), Math.floor(j + node.y)]);
+                if (this.nodeGrid.has(pos)){
+                    let gridNodes: Node[] = this.nodeGrid.get(pos);
+                    for (let n of gridNodes) {
+                        console.log(n.distance(node));
+                        if (n.distance(node) < radius) {
+                            nodes.push(n);
+                        }
+                    }
+                }
+            }
+        }
+        let output: Node[] = nodes.filter((n: Node) => !n.equal(node));
+        return output
     }
 }

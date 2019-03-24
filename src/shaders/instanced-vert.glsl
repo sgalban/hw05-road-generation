@@ -13,6 +13,7 @@ in vec4 vs_Nor; // Non-instanced, and presently unused
 //in vec2 vs_Translate; // Another instance rendering attribute used to position each quad instance in the scene
 in vec2 vs_UV; // Non-instanced, and presently unused in main(). Feel free to use it for your meshes.
 in vec4 vs_Endpoints;
+in float vs_Thickness;
 
 out vec4 fs_Col;
 out vec4 fs_Pos;
@@ -35,7 +36,7 @@ void main() {
     
     vec2 pos = vs_Pos.xy;
     //pos += direction * length * 0.5;
-    pos = vec2(pos.x * length, pos.y / 10.0);
+    pos = vec2(pos.x * length, pos.y * vs_Thickness);
     pos = rotation * pos;
     pos += (end1 + end2) / 2.0;
     pos = vec2(pos.x / 10.0 / aspectRatio, pos.y / 10.0);
