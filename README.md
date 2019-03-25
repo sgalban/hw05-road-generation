@@ -6,6 +6,7 @@ In this assignment, I accomplished 3 primary tasks:
 - I used noise functions to generate terrain and a population density
 - I used L-System-esque techniques to generate a highway system that generally follows population density
 - I used some graph theory and basic geometry to create small, gridlike neighborhoods that are located in areas of high population, and intersect properly with the highways
+![](roadgen.png)
 
 ## Terrain/Population Generation
 - My terrain generation is fairly standard. I used perlin noise to generate some hills and mountains, and then subtracted away some fractal brownian motion, which levels out the land a bit, and creates areas with a negative height (which become the oceans and lakes). 
@@ -50,4 +51,4 @@ I provided several parameters the user can change to effect the road network and
 With the exception of my own notes and the provided paper (Procedural Modeling of Cities), I used no external references.
 
 ## Github Demo
-
+https://sgalban.github.io/hw05-road-generation/
