@@ -66,6 +66,7 @@ export default class SpatialGraph {
             return false;
         }
         if (!this.adjacency.has(n1)) {
+            this.addNode(n1);
             this.adjacency.set(n1, [n2]);
             success = true;
         }
@@ -78,13 +79,16 @@ export default class SpatialGraph {
             }
         }
         if (!this.adjacency.has(n2)) {
+            this.addNode(n2);
             this.adjacency.set(n2, [n1]);
+            success = true;
         }
         else {
             let adj2 = this.adjacency.get(n2);
             if (adj2.indexOf(n1) === -1) {
                 adj2.push(n1);
                 this.adjacency.set(n2, adj2);
+                success = true;
             }
         }
         if (success) {
@@ -120,7 +124,6 @@ export default class SpatialGraph {
                 if (this.nodeGrid.has(pos)){
                     let gridNodes: Node[] = this.nodeGrid.get(pos);
                     for (let n of gridNodes) {
-                        console.log(n.distance(node));
                         if (n.distance(node) < radius) {
                             nodes.push(n);
                         }
@@ -130,5 +133,33 @@ export default class SpatialGraph {
         }
         let output: Node[] = nodes.filter((n: Node) => !n.equal(node));
         return output
+    }
+
+    getConnectedComponents(): Node[][] {
+        console.log("Test");
+        let ccs: Node[][] = [];
+        let unseenNodes: Set<Node> = new Set(this.getNodeIterator());
+        let seenNodes: Set<Node> = new Set();
+        while(unseenNodes.size > 0) {
+            let root: Node = unseenNodes.values().next().value;
+            unseenNodes.delete(root);
+            seenNodes.add(root);
+            let cc = [root]
+            let frontier: Set<Node> = new Set<Node>([root]);
+            while (frontier.size > 0) {
+                let nextNode: Node = frontier.values().next().value;
+                frontier.delete(nextNode);
+                for (let neighbor of this.getAdjacentEdges(nextNode)) {
+                    if (!seenNodes.has(neighbor)) {
+                        seenNodes.add(neighbor);
+                        unseenNodes.delete(neighbor);
+                        cc.push(neighbor);
+                        frontier.add(neighbor);
+                    }
+                }
+            }
+            ccs.push(cc);
+        }
+        return ccs;
     }
 }

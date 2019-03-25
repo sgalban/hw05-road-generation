@@ -48,6 +48,6 @@ void main() {
     //vec2 pos = (end1 + end2) / 2.0;
 
     fs_Pos = vec4(pos.x, pos.y, 0.9995, 1.0);
-    fs_Dummy = vs_Pos;
+    fs_Dummy = vs_Pos + vs_Endpoints;
     gl_Position = vec4(pos.x, pos.y, 0.9995, 1.0);
 }

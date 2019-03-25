@@ -32,8 +32,9 @@ const controls = {
     "Snap Radius": snapRadius,
     "Highway Thickness": highwayThickness,
     "Generate": () => {
-        highwayGenerator.generateRoadNetwork(branchingAngle, roadCount, snapRadius);
-        highwayGenerator.drawHighwayNetwork(square, highwayThickness);
+        highwayGenerator.generateHighwayNetwork(branchingAngle, roadCount, snapRadius);
+        highwayGenerator.generateRoadGrid();
+        highwayGenerator.drawRoadNetwork(square, highwayThickness);
     }
 };
 
@@ -68,12 +69,7 @@ function loadScene() {
     square.setInstanceVBOs(offsets, colors);
     square.setNumInstances(n * n); // grid of "particles"*/
 
-    highwayGenerator.generateRoadNetwork(
-        controls["Branching Angle"],
-        controls["Road Count"],
-        controls["Snap Radius"]
-    );
-    highwayGenerator.drawHighwayNetwork(square, highwayThickness);
+    controls.Generate()
 }
 
 function main() {
@@ -124,7 +120,6 @@ function main() {
         new Shader(gl.FRAGMENT_SHADER, require('./shaders/flat-frag.glsl')),
     ]);
     flat.setDimensions(window.innerWidth, window.innerHeight);
-    let lastThickness = highwayThickness;
 
     // This function will be called every frame
     function tick() {
@@ -135,17 +130,13 @@ function main() {
         flat.setTime(time);
         instancedShader.setTime(time);
         flat.setMode(controls["Show Height"], controls["Show Population"], controls["Show Grid"]);
+        instancedShader.setMode(controls["Show Height"], controls["Show Population"], controls["Show Grid"]);
         let regenerate = false;
 
         branchingAngle = controls["Branching Angle"];
         roadCount = controls["Road Count"];
         snapRadius = controls["Snap Radius"];
         highwayThickness = controls["Highway Thickness"];
-
-        if (lastThickness != highwayThickness) {
-            lastThickness = highwayThickness;
-            highwayGenerator.drawHighwayNetwork(square, highwayThickness);
-        }
 
         gl.viewport(0, 0, window.innerWidth, window.innerHeight);
         renderer.clear();
