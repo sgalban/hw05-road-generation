@@ -1,56 +1,53 @@
 # Homework 5: Road Generation
+## Steven Galban, PennKey: sgalban
 
-For this assignment, you will generate a network of roads to form the basis of a city using a modified version of L-systems. As in homework 4, you will be using instanced rendering to draw your road networks.
+## Overview
+In this assignment, I accomplished 3 primary tasks:
+- I used noise functions to generate terrain and a population density
+- I used L-System-esque techniques to generate a highway system that generally follows population density
+- I used some graph theory and basic geometry to create small, gridlike neighborhoods that are located in areas of high population, and intersect properly with the highways
 
-## Base Code
-We have provided the same code that came with homework 4, but you will likely want to use most of your code from that assignment. Feel free to copy over as much of your homework 4 implementation as you want. We have also provided [Procedural Modeling of Cities](proceduralCityGeneration.pdf), a brief technical paper describing techniques for generating road networks. Refer to this as you implement the sections below.
+## Terrain/Population Generation
+- My terrain generation is fairly standard. I used perlin noise to generate some hills and mountains, and then subtracted away some fractal brownian motion, which levels out the land a bit, and creates areas with a negative height (which become the oceans and lakes). 
+- The population density was created using perlin noise. In order to ensure that the density wasn't too uniform, as perlin noise tends to be pretty low contract compared to other noise functions, I cubed the resulting value, creating prominent blobs of high population. I also created a falloff function based on the terrain height, which ensures that there is no population on the tops of mountains or in bodies of water. The population density can be visualized (in red) using the "Show Population" control.
+- In order to make the scene more visually interesting, I used a variety of noise functions to give the terrain some proper coloring. Most of these techniques were also used in the procedural terrain assignment earlier this semester, including the FBM-perturbed worley noise water effect, but I also used the heightmap to ensure that the water near the coastline is more saturated.
+- This generation was performed separately on the CPU and the GPU, and making sure the output was identical was the tricknest part. Even when the random functions only use floating points, the values were never quite the same, likely due to the different ways the processors deal with floating-point-imprecision. After modifying the noise functions (which make them less "random", though it's not noticable on the scale of this project), I reached a result that was not perfect, but good enough for my needs. For this reason, you may notice some roads that begin to branch into the water, but fortunately, the CPU avoids wandering very far into the ocean, and the road generation looks reasonable.
 
-## Assignment Requirements
-- __(10 points)__ Use whatever noise functions suit you to generate 2D map data of the following information, and set up GUI toggles to render each map on a 2D screen quadrangle. The user should have the option to view both overlaid on each other.
-  - Terrain elevation, setting anything below a certain height to water. Higher elevation should be lighter in color. Include an option to display a simple land versus water view.
-  - Population density. Denser population should be lighter in color.
-- __(20 points)__ Create a set of classes to represent a pseudo L-system; you will still have a Turtle to track your drawing state, but you will expand your road network based on the Turtle's current environment as it moves and draws. You won't be tracking a grammar as a set of characters, but you will keep a set of rules to determine how to advance your Turtle.
-  - Your Turtle will begin from a random point in the bounds of your screen.
-  - Depending on the type of road network being generated (see next section) your Turtle will move forward and draw some sort of road in its wake.
-  - Each time the Turtle completes a road segment, it will evaluate whether it should branch to create more roads in different directions (same idea as the push and pop of Turtle state). This is where your expansion rules come in; the Turtle must decide how it will branch (if at all).
-  - Store your roads as sets of edges and intersections so that you can more easily make roads connect to one another as described in section 3.3.1 of Procedural Modeling of Cities
-- __(20 points)__ Create distinct rule sets for drawing roads that obey the following layouts (refer to figure 5 in [Procedural Modeling of Cities](proceduralCityGeneration.pdf) for illustrations):
-  - Basic road branching: The main roads follow population density as a metric for directional bias
-  - Checkered road networking: The roads are aligned with some global directional vector and have a maximum block width and length. Intersections are all roughly 90 degrees.
-- __(30 points)__ Using the components you created in the previous sections, generate the 2D street layout of a city with the following features:
-  - An overarching sparse layout of highway roads that are thicker than other roads
-  - Within the highway outline, denser clusters of smaller roads with less visual line thickness than the highways
-  - Inclusion of both road branching methods
-  - Only highways are allowed to cross water
-  - Roads are self-sensitive, as described in section 3.3.1 of Procedural Modeling of Cities
+## Highway Generation
+The highway uses an L-System-like turtle to grow forward and branch.
+- The roads are drawn using an instanced rectangle. For each segment, the 2 endpoints are passed to the GPU (as this meshes conveniently with the graph structure I use), where the segment is then transformed and converted to screen space appropriately. The same techniques are used when rendering the grid roads.
+- As described in the provided paper, after generating a segment of road, the generator tests 5 points in a radial fan in front of the current endpoint. These points are an equal distance from the current road end, and are equiangluar (I tried providing some random variation to the angles, but I found that it made the end result look less aesthetically pleasing). The road grows in the direction of the test point with the highest population density (if the density is positive, otherwise the road just stops), and sometimes, it will branch in the direction of the second test point.
+- The length of the segments grow as the population density of the endpoints decrease, which creates a small amount of clustering around high population areas
+- While the generation is not directly effected by the terrain height, it does have some influence, as the population density depends on the height to an extent.
+- I also implemented some of the self-sensitivity features described in the paper:
+  - If a generated segment intersects with another generated segment, the point of intersection to calculated, and the new segment is truncated. At this point, this branch of the road stops growing.
+  - If a newly generated segment would intersect with a previously generated segment if it was just a bit longer (the amount can be controlled by the "Snap Radius" control, though "Snap Distance" may be a more fitting name), it is extended such that the two roads connect. At this point, this branch of the road stops growing.
+  - If a dead-end is close enough to another node, a new road is constructed between them. In order to prevent an O(n^2) operation, a map maps each grid cell to the list of nodes contained within it, meaning I only have to check the nodes in earby cells instead of all of them. Note that this is slightly different to the method described in the paper, in which the two nodes are merged instead of simply connected. Unlike the previous 2 features, this one is performed after the road has finished generated.
 
-- __(10 points)__ Using dat.GUI, make at least three aspects of your program interactive, such as:
-  - Terrain shape
-  - Population density
-  - Highway density
-  - Random seed used for the RNG basis of road branching
+## Neighborhood Generation
+I found this to be one of the most difficult aspects of the assignment to implement, as neither the provided paper nor the project writeup explain how to do it in an efficient way. The end result isn't completely satisfactory to me, but it's a good start. Unfortunately, I lacked the time to get it quite where I wanted it to be, but many of the pieces are there
+- To determine where the neighborhoods will be, I sampled every integer point on the map, and found the population density. I stored each of the points that exceded some fixed denisty in a graph, and added an edge between 2 nodes if the corresponding grid cells were adjacent. I then ran a simple breadth-first-search to find the individual connected components. Each component became a neighborhood, with the center being the average of all the points in the component.
+  - There is likely a bug or an oversight in the above implementation, as some of my neighborhoods intersected with each other, which was very ugly. To fix this, I simply don't render a neighborhood if an already-drawn one is too close to its center. Unforuntately, this creates a rather sparse road network.
+- I then generated a random number to determine the "direction" of the neighborhood, i.e., the direction the streets would run.
+- From the center of each neighborhood, I sent out 4 test points in the forward, backward, right, and left directions (relative to the neighborhood angle). If the population density at these points was too small, I retracted each point a bit, and repeated this until the density was high enough (or after too many iterations). This gave me a rectangle in which the neighborhood would be placed.
+  - Recall that the noise functions aren't perfectly synced between the CPU and GPU, so some of the neighborhoods are halfway in the water. Fortunately, this problem doesn't seem to be too extreme.
+-From the center of each neighborhood, I placed 10 equally spaced roads in both the horizontal and vertical directions (again, relative to the direction of the neighborhood). Each of these roads was actually 2 segments extended from the center axis, allowing me to easily test both for intersections with the highway roads.
+  - Not every highway road was tested against. Using the fact that there is a maximum length a road could be, and the grid-based acceleration structure used in the highway generation, I was able to only test against a subset of the highway roads
+  - If no road in a neighborhood intersected with a highway road, it wasn't drawn
 
-- __(10 points)__ Following the specifications listed
-[here](https://github.com/pjcozzi/Articles/blob/master/CIS565/GitHubRepo/README.md),
-create your own README.md, renaming the file you are presently reading to
-INSTRUCTIONS.md. Don't worry about discussing runtime optimization for this
-project. Make sure your README contains the following information:
-    - Your name and PennKey
-    - Citation of any external resources you found helpful when implementing this
-    assignment.
-    - A link to your live github.io demo (refer to the pinned Piazza post on
-      how to make a live demo through github.io)
-    - An explanation of the techniques you used to generate your L-System features.
-    Please be as detailed as you can; not only will this help you explain your work
-    to recruiters, but it helps us understand your project when we grade it!
+## Paramters
+I provided several parameters the user can change to effect the road network and map:
+- "Show Height" will render the terrain color instead of the simple 2-color map.
+- "Show Population" displays the population density across the map in red.
+- "Show Grid" overlays a grid onto the map, with each cell being a 1x1 unit in world space. The origin is marked with a magenta dot.
+- "Branching Angle" will change the angle of the fan in which new points are tested when growing a highway branch. Note that 5 equally angled points are tested, so if the angle is 180, every angle in the highway will be a multiple of 45° (which I set as the default, because I find it to be the most visually pleasing). Generally, smaller angles create more awkward looking networks
+- "Road Count" determines the approximate number of roads that will be generated. Due to some of the self-sensitivity, there could be more. 
+- "Snap Radius" is the radius in which a node will connect to another road or node. Values larger than 1 can create really ugly highways.
+- "Highway Thickness" is the thickness of the highways in world space. The backroads are also changed to be half of this thickness.
+- The road generation takes a moderate amount of time to complete. Regenerating when one of the above parameters are changed makes the sliders feel unresponsive, so I created a "Generate" button that regenerates the network based on the user input.
 
-## Expected visual output
-The results of your road generation need only be simple 2D images, like the ones in Procedural Modeling of Cities. You may make 3D terrain with overlaid roads if you want, but for this assignment it's not necessary.
+## References
+With the exception of my own notes and the provided paper (Procedural Modeling of Cities), I used no external references.
 
-![](nyc.png)
+## Github Demo
 
-## Extra Credit (Up to 20 points)
-- Implement additional road layouts as described in Procedural Modeling of Cities
-  - Radial road networking: The main roads follow radial tracks around some predefined centerpoint
-  - Elevation road networking: Roads follow paths of least elevation change
-- Add any polish features you'd like to make your visual output more interesting
